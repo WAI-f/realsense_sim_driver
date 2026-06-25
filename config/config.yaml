@@ -1,0 +1,34 @@
+realsense_sim_driver:
+  ros__parameters:
+    # Isaac Sim input topics
+    input_rgb_topic: /isaac_rgb
+    input_depth_topic: /isaac_depth
+    input_rgb_info_topic: /isaac_rgb_cam_info
+    input_depth_info_topic: /isaac_depth_cam_info
+
+    # RealSense-compatible output topics
+    output_color_image_topic: /color/image_raw
+    output_color_info_topic: /color/camera_info
+    output_depth_image_topic: /depth/image_rect_raw
+    output_depth_info_topic: /depth/camera_info
+    output_aligned_depth_image_topic: /aligned_depth_to_color/image_raw
+    output_aligned_depth_info_topic: /aligned_depth_to_color/camera_info
+    output_points_topic: /depth/color/points
+
+    # Isaac depth input is 32FC1 in meters. Output depth uses 16UC1 in mm.
+    output_depth_encoding: 16UC1
+    uint16_depth_scale: 0.001
+    float_depth_scale: 1.0
+    min_depth_m: 0.05
+    max_depth_m: 10.0
+
+    sync_slop_sec: 0.05
+    queue_size: 10
+    pointcloud_stride: 1
+    publish_pointcloud: true
+    publish_camera_info: true
+
+    use_tf: true
+    use_latest_tf: true
+    lookup_tf_timeout_sec: 0.05
+    assume_identity_tf: true
