@@ -9,7 +9,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
 from sensor_msgs.msg import CameraInfo, Image, PointCloud2, PointField
 import tf2_ros
@@ -28,39 +28,41 @@ class AlignedRealsenseNode(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
-        qos = qos_profile_sensor_data
+        input_qos = self._make_qos_profile('input_qos_reliability')
+        output_qos = self._make_qos_profile('output_qos_reliability')
+
         self.color_image_pub = self.create_publisher(
-            Image, self._param('output_color_image_topic'), qos)
+            Image, self._param('output_color_image_topic'), output_qos)
         self.color_info_pub = self.create_publisher(
-            CameraInfo, self._param('output_color_info_topic'), qos)
+            CameraInfo, self._param('output_color_info_topic'), output_qos)
         self.depth_image_pub = self.create_publisher(
-            Image, self._param('output_depth_image_topic'), qos)
+            Image, self._param('output_depth_image_topic'), output_qos)
         self.depth_info_pub = self.create_publisher(
-            CameraInfo, self._param('output_depth_info_topic'), qos)
+            CameraInfo, self._param('output_depth_info_topic'), output_qos)
         self.aligned_depth_image_pub = self.create_publisher(
-            Image, self._param('output_aligned_depth_image_topic'), qos)
+            Image, self._param('output_aligned_depth_image_topic'), output_qos)
         self.aligned_depth_info_pub = self.create_publisher(
-            CameraInfo, self._param('output_aligned_depth_info_topic'), qos)
+            CameraInfo, self._param('output_aligned_depth_info_topic'), output_qos)
         self.points_pub = self.create_publisher(
-            PointCloud2, self._param('output_points_topic'), qos)
+            PointCloud2, self._param('output_points_topic'), output_qos)
 
         self.rgb_info_sub = self.create_subscription(
             CameraInfo,
             self._param('input_rgb_info_topic'),
             self._on_rgb_info,
-            qos,
+            input_qos,
         )
         self.depth_info_sub = self.create_subscription(
             CameraInfo,
             self._param('input_depth_info_topic'),
             self._on_depth_info,
-            qos,
+            input_qos,
         )
 
         self.rgb_sub = Subscriber(
-            self, Image, self._param('input_rgb_topic'), qos_profile=qos)
+            self, Image, self._param('input_rgb_topic'), qos_profile=input_qos)
         self.depth_sub = Subscriber(
-            self, Image, self._param('input_depth_topic'), qos_profile=qos)
+            self, Image, self._param('input_depth_topic'), qos_profile=input_qos)
         self.sync = ApproximateTimeSynchronizer(
             [self.rgb_sub, self.depth_sub],
             int(self._param('queue_size')),
@@ -103,6 +105,9 @@ class AlignedRealsenseNode(Node):
         self.declare_parameter('max_depth_m', 10.0)
         self.declare_parameter('sync_slop_sec', 0.05)
         self.declare_parameter('queue_size', 10)
+        self.declare_parameter('qos_depth', 10)
+        self.declare_parameter('input_qos_reliability', 'best_effort')
+        self.declare_parameter('output_qos_reliability', 'reliable')
         self.declare_parameter('pointcloud_stride', 1)
         self.declare_parameter('publish_pointcloud', True)
         self.declare_parameter('publish_camera_info', True)
@@ -113,6 +118,24 @@ class AlignedRealsenseNode(Node):
 
     def _param(self, name: str):
         return self.get_parameter(name).value
+
+    def _make_qos_profile(self, reliability_param: str) -> QoSProfile:
+        reliability = str(self._param(reliability_param)).lower()
+        if reliability in ('best_effort', 'best-effort', 'besteffort'):
+            reliability_policy = ReliabilityPolicy.BEST_EFFORT
+        elif reliability == 'reliable':
+            reliability_policy = ReliabilityPolicy.RELIABLE
+        elif reliability in ('system_default', 'default'):
+            reliability_policy = ReliabilityPolicy.SYSTEM_DEFAULT
+        else:
+            raise ValueError(
+                f"{reliability_param} must be reliable, best_effort, or system_default")
+
+        return QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=int(self._param('qos_depth')),
+            reliability=reliability_policy,
+        )
 
     def _on_rgb_info(self, msg: CameraInfo) -> None:
         self.rgb_info = msg

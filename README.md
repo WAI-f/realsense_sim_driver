@@ -20,7 +20,8 @@ ros2 launch realsense_sim_driver realsense_sim_driver.launch.py
 使用自定义配置文件运行:
 
 ```bash
-ros2 launch realsense_sim_driver realsense_sim_driver.launch.py   config_file:=/absolute/path/to/config.yaml
+ros2 launch realsense_sim_driver realsense_sim_driver.launch.py \
+  config_file:=/absolute/path/to/config.yaml
 ```
 
 默认 Isaac Sim 输入话题:
@@ -39,6 +40,18 @@ RealSense 兼容输出话题:
 - `/aligned_depth_to_color/image_raw`
 - `/aligned_depth_to_color/camera_info`
 - `/depth/color/points`
+
+QoS 配置:
+
+默认情况下，节点订阅 Isaac Sim 输入话题使用 `best_effort`，发布给 RViz 和下游节点的话题使用 `reliable`。这样可以兼容仿真传感器数据，同时避免 RViz 出现 `RELIABILITY_QOS_POLICY` 不兼容 warning。
+
+相关参数位于 `config/config.yaml`:
+
+```yaml
+input_qos_reliability: best_effort
+output_qos_reliability: reliable
+qos_depth: 10
+```
 
 深度格式转换:
 

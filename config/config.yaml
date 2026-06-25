@@ -3,8 +3,8 @@ realsense_sim_driver:
     # Isaac Sim input topics
     input_rgb_topic: /isaac_rgb
     input_depth_topic: /isaac_depth
-    input_rgb_info_topic: /isaac_rgb_cam_info
-    input_depth_info_topic: /isaac_depth_cam_info
+    input_rgb_info_topic: /isaac_rgb_camera_info
+    input_depth_info_topic: /isaac_depth_camera_info
 
     # RealSense-compatible output topics
     output_color_image_topic: /color/image_raw
@@ -24,6 +24,9 @@ realsense_sim_driver:
 
     sync_slop_sec: 0.05
     queue_size: 10
+    qos_depth: 10
+    input_qos_reliability: best_effort
+    output_qos_reliability: reliable
     pointcloud_stride: 1
     publish_pointcloud: true
     publish_camera_info: true
@@ -31,4 +34,4 @@ realsense_sim_driver:
     use_tf: true
     use_latest_tf: true
     lookup_tf_timeout_sec: 0.05
-    assume_identity_tf: true
+    assume_identity_tf: false
