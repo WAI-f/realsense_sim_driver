@@ -246,6 +246,7 @@ class AlignedRealsenseNode(Node):
             depth_frame,
             depth_msg.header.stamp,
         )
+        self.get_logger().info(f"rotation: {rotation}, translation: {translation}")
         points_rgb = rotation @ points_depth + translation.reshape(3, 1)
 
         z_rgb = points_rgb[2, :]
